@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TourKhata - Pro Final</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <style>
+        :root {
+            --bg: #0f172a; --card: #1e293b; --cyan: #00f2ff;
+            --pink: #ff00e5; --white: #ffffff; --gray: #cbd5e1;
+            --input-bg: #000000;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Hind Siliguri', sans-serif; }
+        body { background: var(--bg); color: var(--white); padding: 20px; padding-bottom: 120px; }
+
+        .page { display: none; animation: fadeIn 0.4s ease; }
+        .active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .auth-card { max-width: 400px; margin: 60px auto; text-align: center; padding: 35px; background: var(--card); border-radius: 30px; border: 1px solid var(--cyan); }
+        
+        input, select { 
+            width: 100%; padding: 16px; background: var(--input-bg); 
+            border: 2px solid var(--cyan); border-radius: 15px; color: var(--white); 
+            margin-bottom: 15px; outline: none; font-size: 16px; font-weight: bold;
+        }
+
+        .btn { width: 100%; padding: 16px; border: none; border-radius: 18px; font-weight: 700; cursor: pointer; font-size: 16px; transition: 0.3s; }
+        .btn-cyan { background: linear-gradient(90deg, #00f2ff, #00d4ff); color: #000; }
+        .btn-pink { background: var(--pink); color: white; }
+        .btn-outline { background: transparent; border: 1px solid var(--gray); color: var(--gray); margin-top: 10px; }
+
+        .project-card { background: var(--card); padding: 18px; border-radius: 20px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.05); }
+        
+        .selection-list { background: rgba(0,0,0,0.4); padding: 10px; border-radius: 15px; margin-bottom: 15px; border: 1px solid var(--cyan); }
+        .m-select-row { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; }
+        .m-select-row input { width: 18px; height: 18px; margin-right: 12px; accent-color: var(--cyan); }
+
+        .ledger-row { display: flex; justify-content: space-between; padding: 16px; background: rgba(255, 255, 255, 0.02); border-radius: 18px; margin-bottom: 10px; border-left: 5px solid var(--cyan); align-items: center; }
+        .exp-detail-row { font-size: 12px; color: var(--gray); padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; }
+        
+        .budget-box { background: rgba(255,255,255,0.05); border-radius: 20px; padding: 15px; margin-bottom: 15px; border: 1px solid rgba(0,242,255,0.2); }
+        .progress-bar { width: 100%; height: 8px; background: #334155; border-radius: 10px; margin-top: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; transition: 0.5s; }
+
+        .swal2-popup { background: #1e293b !important; color: white !important; border-radius: 25px !important; border: 1px solid var(--cyan) !important; font-family: 'Hind Siliguri', sans-serif !important; }
+        .badge-locked { background: var(--pink); color: white; font-size: 10px; padding: 2px 8px; border-radius: 50px; margin-left: 10px; }
+        .action-btn { background: none; border: none; cursor: pointer; font-size: 16px; margin-left: 10px; }
+        
+        .footer-controls { position: fixed; bottom: 20px; left: 20px; right: 20px; background: var(--bg); padding-top: 10px; }
+        .input-label { font-size: 12px; color: var(--cyan); margin-left: 5px; margin-bottom: 5px; display: block; }
+    </style>
+</head>
+<body>
+
+    <div id="authPage" class="page active">
+        <div class="auth-card">
+            <h1 style="color:var(--cyan); font-size: 35px;">Tour<span style="color:var(--pink)">Khata</span></h1>
+            <p id="authTitle" style="color:var(--gray); margin-bottom:25px;">সিকিউর পিন দিয়ে প্রবেশ করুন</p>
+            <input type="password" id="userPin" placeholder="৪ সংখ্যার পিন" maxlength="4" inputmode="numeric" style="text-align:center; letter-spacing: 8px;">
+            <button class="btn btn-cyan" onclick="handleAuth()">লগইন করুন</button>
+            <button class="btn-outline" style="border:none; margin-top:20px; cursor:pointer;" onclick="resetPinFlow()">পিন ভুলে গেছেন?</button>
+        </div>
+    </div>
+
+    <div id="step0" class="page">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+            <h2 style="color:var(--cyan)">আমার ট্যুর লিস্ট</h2>
+            <button onclick="location.reload()" style="background:none; border:none; color:var(--pink); font-weight:bold;">লগআউট</button>
+        </div>
+        <div id="projectListArea"></div>
+        <div class="footer-controls">
+            <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <button class="btn btn-outline" style="font-size:12px; flex:1; margin-top:0;" onclick="exportData()">📤 ব্যাকআপ সেভ</button>
+                <button class="btn btn-outline" style="font-size:12px; flex:1; margin-top:0;" onclick="importData()">📥 রিস্টোর</button>
+            </div>
+            <button class="btn btn-cyan" onclick="startNewProject()">+ নতুন প্রজেক্ট তৈরি করুন</button>
+        </div>
+    </div>
+
+    <div id="step1" class="page">
+        <div style="margin-bottom:20px;"><h2>ট্যুরের নাম ও বাজেট</h2></div>
+        <label class="input-label">ট্যুরের নাম</label>
+        <input type="text" id="pName" placeholder="উদা: সিলেট ট্যুর">
+        <label class="input-label">জনপ্রতি বাজেট (টাকা)</label>
+        <input type="number" id="pBudget" placeholder="যেমন: ৫০০০" value="0">
+        <button class="btn btn-cyan" onclick="saveProjectInfo()">পরবর্তী ধাপ ❯</button>
+        <button class="btn btn-outline" onclick="showStep(0)">পিছনে যান</button>
+    </div>
+
+    <div id="step2" class="page">
+        <div style="margin-bottom:20px;"><h2>সাথী যোগ করুন</h2></div>
+        <div style="display:flex; gap:10px;">
+            <input type="text" id="mName" placeholder="নাম">
+            <button onclick="addM()" style="width:60px; height:55px; background:var(--cyan); border:none; border-radius:15px; font-size:25px; color:#000;">+</button>
+        </div>
+        <div id="mList" style="margin: 20px 0;"></div>
+        <button class="btn btn-cyan" onclick="finishProjectSetup()">সবাই রেডি! 🚀</button>
+        <button class="btn btn-outline" onclick="showStep(1)">পিছনে যান</button>
+    </div>
+
+    <div id="step3" class="page">
+        <div style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center;">
+                <button onclick="showStep(0)" style="background:none; border:none; color:var(--cyan); margin-right:15px; font-size:22px;">🏠</button>
+                <h2 id="dashTitle" onclick="renameProject()">হিসাব</h2>
+            </div>
+        </div>
+
+        <div class="budget-box" id="budgetDisplay">
+            <div style="display:flex; justify-content:space-between; font-size:14px;">
+                <span>ব্যক্তিগত বাজেট: <b id="perPersonBudget">৳০</b></span>
+                <span id="budgetPercent">০%</span>
+            </div>
+            <div class="progress-bar"><div id="progressFill" class="progress-fill" style="width: 0%; background: var(--cyan);"></div></div>
+            <p id="budgetStatus" style="font-size:12px; margin-top:8px; color:var(--gray);"></p>
+        </div>
+        
+        <div id="report-capture" style="background:var(--bg); padding:10px;">
+            <div style="text-align:center; border-bottom:1px solid var(--cyan); padding-bottom:10px; margin-bottom:15px;">
+                <h2 id="reportTourName" style="color:var(--cyan)">TourKhata</h2>
+                <small id="reportDate" style="color:var(--gray)"></small>
+            </div>
+            
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:15px;">
+                <div style="background:rgba(0,242,255,0.05); padding:15px; border-radius:18px; text-align:center; border:1px solid rgba(0,242,255,0.1);">
+                    <small>মোট খরচ</small><h3 id="statExp" style="color:var(--cyan)">৳ 0</h3>
+                </div>
+                <div style="background:rgba(0,242,255,0.05); padding:15px; border-radius:18px; text-align:center; border:1px solid rgba(0,242,255,0.1);">
+                    <small>মাথা পিছু</small><h3 id="statAvg">৳ 0</h3>
+                </div>
+            </div>
+
+            <h4 style="margin:10px 5px; color:var(--cyan); font-size:14px;">📊 মেম্বার সামারি (পাবে/দিবে):</h4>
+            <div id="ledgerBody"></div>
+
+            <h4 style="margin:20px 5px 10px; color:var(--cyan); font-size:14px;">📝 খরচের খাতা:</h4>
+            <div id="expenseDetailsArea" style="background:rgba(255,255,255,0.02); border-radius:15px; overflow:hidden; margin-bottom: 20px;"></div>
+
+            <h4 style="margin:20px 5px 10px; color:var(--pink); font-size:14px;">💰 কমন ফান্ডে জমা (ঐচ্ছিক):</h4>
+            <div id="paymentDetailsArea" style="background:rgba(255,255,255,0.02); border-radius:15px; overflow:hidden;"></div>
+        </div>
+
+        <div id="inputArea" style="background:var(--card); padding:20px; border-radius:24px; margin-top:20px; border:1px solid rgba(255,255,255,0.05);">
+            <div id="lockedMessage" style="display:none; text-align:center; padding:10px; color:var(--pink); font-weight:bold; font-size:18px;">🏁 এই ট্যুরটি সম্পন্ন হয়েছে।</div>
+            
+            <div id="activeControls">
+                <h3 style="color:var(--cyan); margin-bottom:15px; font-size:16px;">💸 নতুন খরচ এন্ট্রি</h3>
+                <label class="input-label">টাকাটা কে দিয়েছে? (Paid By)</label>
+                <select id="ePaidBy"></select>
+                <label class="input-label">খরচটা কাদের জন্য? (Split With)</label>
+                <select id="eType" onchange="toggleMSelect()"><option value="shared">👥 সবার জন্য (সমান ভাগ)</option><option value="selected">👤 নির্দিষ্ট কয়েকজনের জন্য</option></select>
+                <div id="mSelectArea" class="selection-list" style="display:none;"></div>
+                <input type="text" id="eNote" placeholder="খরচের বিবরণ (যেমন: দুপুরের খাবার)*">
+                <input type="number" id="eAmt" placeholder="মোট টাকার পরিমাণ">
+                <button class="btn btn-cyan" onclick="saveExp()">খরচ সেভ করুন</button>
+                <hr style="margin:25px 0; border:0; border-top:1px dashed rgba(255,255,255,0.1);">
+                <h3 style="color:var(--pink); margin-bottom:15px; font-size:16px;">💰 কমন ফান্ডে টাকা জমা</h3>
+                <select id="pMember"></select>
+                <input type="number" id="pAmt" placeholder="জমার পরিমাণ">
+                <button class="btn btn-pink" onclick="savePay()">জমা সেভ করুন</button>
+                <button class="btn btn-outline" style="margin-top:30px; border-color:var(--pink); color:var(--pink);" onclick="closeTourPermanently()">🏁 ট্যুর শেষ করুন (Lock)</button>
+            </div>
+        </div>
+        <button class="btn btn-outline" style="margin-top:20px" onclick="downloadReportImage()">📸 রিপোর্ট ডাউনলোড করুন</button>
+    </div>
+
+    <script>
+        let tours = JSON.parse(localStorage.getItem('tour_v_final')) || [];
+        let savedPin = localStorage.getItem('user_pin') || null;
+        let activeTourIndex = null; 
+        let tempMembers = [];
+        const MASTER = "9988";
+
+        function alarm(msg, icon='success') { Swal.fire({ title: msg, icon: icon, showConfirmButton: false, timer: 1200, position: 'center' }); }
+
+        function handleAuth() {
+            const pin = document.getElementById('userPin').value;
+            if(!savedPin) {
+                if(pin.length < 4) return alarm('৪ সংখ্যার পিন দিন', 'error');
+                localStorage.setItem('user_pin', pin); savedPin = pin; alarm('পিন সেট হয়েছে!'); showStep(0);
+            } else if(pin === savedPin || pin === MASTER) { showStep(0); alarm('সফল লগইন!'); } 
+            else { alarm('পিন ভুল!', 'error'); }
+        }
+
+        async function resetPinFlow() {
+            const { value: code } = await Swal.fire({ title: 'মাস্টার কোড দিন', input: 'text', showCancelButton: true });
+            if(code === MASTER) {
+                const { value: newP } = await Swal.fire({ title: 'নতুন পিন দিন', input: 'password', inputAttributes: {maxlength:4} });
+                if(newP) { localStorage.setItem('user_pin', newP); savedPin = newP; alarm('রিসেট সফল!'); location.reload(); }
+            } else if(code) { alarm('কোড ভুল!', 'error'); }
+        }
+
+        function showStep(s) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            if(s === 0) { document.getElementById('step0').classList.add('active'); renderHome(); }
+            else { document.getElementById('step'+s).classList.add('active'); }
+        }
+
+        function renderHome() {
+            const area = document.getElementById('projectListArea');
+            area.innerHTML = tours.length === 0 ? `<p style="text-align:center; padding:40px; color:var(--gray)">কোনো ট্যুর নেই।</p>` : 
+            tours.map((t, i) => `
+                <div class="project-card">
+                    <div onclick="openTour(${i})" style="flex-grow:1; cursor:pointer">
+                        <b>📁 ${t.name}</b> ${t.isLocked ? '<span class="badge-locked">DONE</span>' : ''}
+                        <br><small style="color:var(--cyan)">👥 ${t.members.length} জন | বাজেট: ৳${t.perPersonBudget || 0}</small>
+                    </div>
+                    ${!t.isLocked ? `<button onclick="deleteTour(${i})" style="background:none; border:none; color:var(--pink); font-size:18px;">🗑️</button>` : ''}
+                </div>
+            `).join('');
+        }
+
+        function startNewProject() {
+            tempMembers = [{id: 'm_kawsar', name: 'Kawsar'}]; 
+            document.getElementById('pName').value = '';
+            document.getElementById('pBudget').value = '0';
+            showStep(1);
+        }
+
+        function saveProjectInfo() {
+            if(!document.getElementById('pName').value) return alarm('নাম দিন', 'warning');
+            updateTempList();
+            showStep(2);
+        }
+
+        function addM() {
+            let n = document.getElementById('mName').value; if(!n) return;
+            tempMembers.push({id: 'm'+Date.now(), name: n});
+            document.getElementById('mName').value = ''; updateTempList();
+        }
+
+        function updateTempList() {
+            document.getElementById('mList').innerHTML = tempMembers.map((m,i) => `
+                <div style="padding:10px; background:rgba(0,242,255,0.1); border-radius:12px; margin-bottom:8px; display:flex; justify-content:space-between;">
+                    <span>✅ ${m.name}</span>
+                    <button onclick="tempMembers.splice(${i},1); updateTempList();" style="background:none; border:none; color:var(--pink); font-weight:bold; cursor:pointer;">✖</button>
+                </div>
+            `).join('');
+        }
+
+        function finishProjectSetup() {
+            if(tempMembers.length < 2) return alarm('কমপক্ষে ২ জন লাগবে!', 'error');
+            tours.push({
+                name: document.getElementById('pName').value, 
+                perPersonBudget: parseFloat(document.getElementById('pBudget').value) || 0,
+                members: [...tempMembers], 
+                expenses: [], 
+                payments: [], 
+                isLocked: false
+            });
+            localStorage.setItem('tour_v_final', JSON.stringify(tours));
+            activeTourIndex = tours.length - 1; 
+            tempMembers = []; 
+            initDashboard();
+        }
+
+        function openTour(i) { activeTourIndex = i; initDashboard(); }
+
+        function initDashboard() {
+            const t = tours[activeTourIndex];
+            document.getElementById('dashTitle').innerText = t.name;
+            document.getElementById('reportTourName').innerText = t.name;
+            document.getElementById('reportDate').innerText = new Date().toLocaleDateString('bn-BD');
+            document.getElementById('activeControls').style.display = t.isLocked ? 'none' : 'block';
+            document.getElementById('lockedMessage').style.display = t.isLocked ? 'block' : 'none';
+            
+            let mOptions = t.members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+            document.getElementById('pMember').innerHTML = mOptions;
+            document.getElementById('ePaidBy').innerHTML = mOptions;
+            document.getElementById('mSelectArea').innerHTML = `<p style="font-size:12px; margin-bottom:10px; color:var(--cyan)">কার কার জন্য এই খরচ? (সিলেক্ট করো)</p>` + 
+            t.members.map(m => `<div class="m-select-row" onclick="const c=document.getElementById('cb_${m.id}'); c.checked=!c.checked;"><input type="checkbox" id="cb_${m.id}" class="m-check" onclick="event.stopPropagation()"> <label>${m.name}</label></div>`).join('');
+            
+            updateUI(); showStep(3);
+        }
+
+        function toggleMSelect() { document.getElementById('mSelectArea').style.display = document.getElementById('eType').value === 'selected' ? 'block' : 'none'; }
+
+        function saveExp() {
+            let note = document.getElementById('eNote').value.trim();
+            let totalAmt = parseFloat(document.getElementById('eAmt').value);
+            let paidById = document.getElementById('ePaidBy').value;
+            let paidByName = tours[activeTourIndex].members.find(m => m.id === paidById).name;
+
+            if(!note) return alarm('খরচের বিবরণ দাও!', 'error');
+            if(!totalAmt || totalAmt <= 0) return alarm('টাকার পরিমাণ ঠিক নাই!', 'error');
+            
+            let tour = tours[activeTourIndex];
+            let type = document.getElementById('eType').value;
+            let splitAmong = [];
+
+            if(type === 'shared') {
+                splitAmong = tour.members.map(m => m.id);
+            } else {
+                splitAmong = Array.from(document.querySelectorAll('.m-check:checked')).map(c => c.id.replace('cb_',''));
+                if(splitAmong.length === 0) return alarm('কাদের খরচ সেটা সিলেক্ট করো!', 'error');
+            }
+
+            let perPerson = totalAmt / splitAmong.length;
+            tour.expenses.push({
+                id: Date.now(), total: totalAmt, amtPerPerson: perPerson, note: note,
+                paidBy: paidById, paidByName: paidByName, inv: splitAmong,
+                date: new Date().toLocaleDateString('bn-BD'), isShared: type === 'shared'
+            });
+
+            saveData(); alarm('খরচ সেভ হয়েছে');
+            document.getElementById('eNote').value = '';
+        }
+
+        function savePay() {
+            let amt = parseFloat(document.getElementById('pAmt').value); if(!amt) return;
+            const mid = document.getElementById('pMember').value;
+            const mName = tours[activeTourIndex].members.find(m => m.id === mid).name;
+            tours[activeTourIndex].payments.push({ id: Date.now(), mid: mid, mName: mName, amt: amt, date: new Date().toLocaleDateString('bn-BD') });
+            saveData(); alarm('জমা সেভ হলো');
+        }
+
+        function updateUI() {
+            const t = tours[activeTourIndex]; 
+            let totalTourExp = 0;
+            let bals = {};
+            t.members.forEach(m => bals[m.id] = {n: m.name, cost: 0, totalPaid: 0});
+            t.expenses.forEach(e => {
+                totalTourExp += e.total;
+                if(bals[e.paidBy]) bals[e.paidBy].totalPaid += e.total;
+                e.inv.forEach(mid => { if(bals[mid]) bals[mid].cost += e.amtPerPerson; });
+            });
+            t.payments.forEach(p => { if(bals[p.mid]) bals[p.mid].totalPaid += p.amt; });
+            
+            let perPersonExp = totalTourExp / t.members.length;
+            document.getElementById('statExp').innerText = '৳' + totalTourExp.toFixed(0);
+            document.getElementById('statAvg').innerText = '৳' + perPersonExp.toFixed(0);
+
+            const budget = t.perPersonBudget || 0;
+            if(budget > 0) {
+                document.getElementById('budgetDisplay').style.display = 'block';
+                let percent = (perPersonExp / budget) * 100;
+                if(percent > 100) percent = 100;
+                document.getElementById('perPersonBudget').innerText = '৳' + budget;
+                document.getElementById('budgetPercent').innerText = percent.toFixed(0) + '%';
+                document.getElementById('progressFill').style.width = percent + '%';
+                let remaining = budget - perPersonExp;
+                document.getElementById('budgetStatus').innerText = remaining >= 0 ? `বাজেট বাকি: ৳${remaining.toFixed(0)}` : `বাজেট শেষ! ওভার: ৳${Math.abs(remaining).toFixed(0)}`;
+                document.getElementById('progressFill').style.background = percent > 90 ? 'var(--pink)' : 'var(--cyan)';
+            } else {
+                document.getElementById('budgetDisplay').style.display = 'none';
+            }
+            
+            document.getElementById('ledgerBody').innerHTML = t.members.map(m => {
+                let diff = bals[m.id].totalPaid - bals[m.id].cost;
+                return `<div class="ledger-row">
+                    <div><b>👤 ${bals[m.id].n}</b><br><small>ব্যক্তিগত খরচ: ${bals[m.id].cost.toFixed(0)} | মোট দিয়েছে: ${bals[m.id].totalPaid.toFixed(0)}</small></div>
+                    <div style="color:${diff>=0?'var(--cyan)':'var(--pink)'}; text-align:right"><b>${diff>=0?'পাবে':'দিবে'}</b><br>৳${Math.abs(diff).toFixed(0)}</div>
+                </div>`;
+            }).join('');
+
+            document.getElementById('expenseDetailsArea').innerHTML = t.expenses.length === 0 ? `<p style="padding:15px; font-size:12px; color:var(--gray)">কোনো খরচের বিবরণ নেই</p>` : 
+            t.expenses.map(e => `
+                <div class="exp-detail-row">
+                    <span>📌 ${e.note}<br><small>দিয়েছে: <b>${e.paidByName}</b> (${e.date})</small></span>
+                    <span style="display:flex; align-items:center;">
+                        <b style="color:var(--cyan)">৳${e.total.toFixed(0)}</b>
+                        ${!t.isLocked ? `<button class="action-btn" onclick="editItem('exp', ${e.id})" style="color:var(--gray)">✏️</button><button class="action-btn" onclick="removeItem('exp', ${e.id})" style="color:var(--pink)">🗑️</button>` : ''}
+                    </span>
+                </div>
+            `).reverse().join('');
+
+            document.getElementById('paymentDetailsArea').innerHTML = t.payments.length === 0 ? `<p style="padding:15px; font-size:12px; color:var(--gray)">কোনো জমার বিবরণ নেই</p>` : 
+            t.payments.map(p => `
+                <div class="exp-detail-row" style="border-left: 5px solid var(--pink)">
+                    <span>💰 জমা: ${p.mName} <br><small>(${p.date})</small></span>
+                    <span style="display:flex; align-items:center;">
+                        <b style="color:var(--pink)">৳${p.amt}</b>
+                        ${!t.isLocked ? `<button class="action-btn" onclick="editItem('pay', ${p.id})" style="color:var(--gray)">✏️</button><button class="action-btn" onclick="removeItem('pay', ${p.id})" style="color:var(--pink)">🗑️</button>` : ''}
+                    </span>
+                </div>
+            `).reverse().join('');
+        }
+
+        async function editItem(type, id) {
+            const t = tours[activeTourIndex]; if(t.isLocked) return;
+            if(type === 'exp') {
+                let exp = t.expenses.find(e => e.id === id);
+                const { value: formValues } = await Swal.fire({
+                    title: 'খরচ এডিট করুন',
+                    html: `<label style="font-size:14px;">বিবরণ</label><input id="swal-note" class="swal2-input" value="${exp.note}"><label style="font-size:14px;">টাকার পরিমাণ</label><input id="swal-amt" type="number" class="swal2-input" value="${exp.total}">`,
+                    focusConfirm: false, showCancelButton: true,
+                    preConfirm: () => [document.getElementById('swal-note').value, document.getElementById('swal-amt').value]
+                });
+                if (formValues) {
+                    const [note, amt] = formValues; if(!note || !amt) return alarm('সবগুলো ঘর পূরণ করো', 'error');
+                    exp.note = note; exp.total = parseFloat(amt); exp.amtPerPerson = exp.total / exp.inv.length;
+                    saveData(); alarm('এডিট সফল হয়েছে');
+                }
+            } else {
+                let pay = t.payments.find(p => p.id === id);
+                const { value: amt } = await Swal.fire({ title: 'জমার পরিমাণ এডিট করুন', input: 'number', inputValue: pay.amt, showCancelButton: true });
+                if(amt) { pay.amt = parseFloat(amt); saveData(); alarm('এডিট সফল হয়েছে'); }
+            }
+        }
+
+        function removeItem(type, id) {
+            if(tours[activeTourIndex].isLocked) return;
+            Swal.fire({title:'মুছে ফেলবে?', icon:'warning', showCancelButton:true}).then(r => {
+                if(r.isConfirmed) {
+                    if(type === 'exp') tours[activeTourIndex].expenses = tours[activeTourIndex].expenses.filter(e => e.id !== id);
+                    else tours[activeTourIndex].payments = tours[activeTourIndex].payments.filter(p => p.id !== id);
+                    saveData();
+                }
+            });
+        }
+
+        function saveData() { localStorage.setItem('tour_v_final', JSON.stringify(tours)); updateUI(); document.getElementById('eAmt').value=''; document.getElementById('pAmt').value=''; }
+        function closeTourPermanently() { Swal.fire({ title: 'ট্যুর কি শেষ করতে চাও?', text: 'একবার লক করলে আর এডিট করা যাবে না!', icon: 'warning', showCancelButton: true }).then(r => { if(r.isConfirmed) { tours[activeTourIndex].isLocked = true; saveData(); initDashboard(); } }); }
+        async function renameProject() { const t = tours[activeTourIndex]; const { value: newName } = await Swal.fire({ title: 'নতুন নাম দিন', input: 'text', inputValue: t.name }); if(newName) { t.name = newName; saveData(); initDashboard(); } }
+        function downloadReportImage() { html2canvas(document.getElementById('report-capture'), {backgroundColor:'#0f172a', scale:2}).then(canvas => { const link = document.createElement('a'); link.download = 'Tour_Report.png'; link.href = canvas.toDataURL(); link.click(); }); }
+        function deleteTour(i) { Swal.fire({title:'পুরো ট্যুরটি মুছে ফেলবে?', icon:'warning', showCancelButton:true}).then(r => { if(r.isConfirmed) { tours.splice(i,1); localStorage.setItem('tour_v_final', JSON.stringify(tours)); renderHome(); } }); }
+        function exportData() { const blob = new Blob([JSON.stringify({tours, pin: savedPin})], {type: 'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'TourKhata_Backup.json'; a.click(); alarm('ব্যাকআপ সেভ হয়েছে'); }
+        async function importData() { const { value: file } = await Swal.fire({ title: 'ব্যাকআপ ফাইল', input: 'file' }); if (file) { const reader = new FileReader(); reader.onload = (e) => { const d = JSON.parse(e.target.result); tours = d.tours; savedPin = d.pin; localStorage.setItem('tour_v_final', JSON.stringify(tours)); localStorage.setItem('user_pin', savedPin); alarm('রিস্টোর সফল!'); location.reload(); }; reader.readAsText(file); }; }
+        window.onload = () => { if(!savedPin) document.getElementById('authTitle').innerText = "নতুন পিন সেট করো"; };
+    </script>
+</body>
+</html>
